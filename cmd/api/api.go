@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	middleware "github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
 )
 
 type application struct {
@@ -17,17 +19,22 @@ type config struct {
 func (app *application) mount() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World"))
-	})
+	mux.Handle("/v1/blog/", BlogRouter())
+
+	mux.Handle("/v1/auth/", AuthRouter())
 
 	return mux
 }
 
 func (app *application) run(mux *http.ServeMux) error {
+
+	stack := middleware.CreateStack(
+		middleware.Logging,
+	)
+
 	srv := &http.Server{
 		Addr:         app.config.addr,
-		Handler:      mux,
+		Handler:      stack(mux),
 		WriteTimeout: 30 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		IdleTimeout:  1 * time.Minute,
