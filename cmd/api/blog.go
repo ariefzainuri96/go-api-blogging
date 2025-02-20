@@ -1,57 +1,90 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
 )
 
-func postBlog(w http.ResponseWriter, r *http.Request) {
+func (app *application) postBlog(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("post blog"))
+
+	app.store.Blogs.Create(context.Background())
 }
 
-func getBlog(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusInternalServerError)
+func (app *application) getBlog(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("get blog"))
 }
 
-func getBlogById(w http.ResponseWriter, r *http.Request) {
+func (app *application) getBlogById(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+
+	baseResp := response.BaseResponse{}
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = "invalid id"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
+	baseResp.Status = http.StatusOK
+	baseResp.Message = "Success"
+	blogResp, _ := response.BlogResponse{
+		BaseResponse: baseResp,
+		Blog: response.Blog{
+			ID:    int64(id),
+			Title: "test",
+			Body:  "test",
+		},
+	}.MarshalBlogResponse()
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("get blog by id"))
+	w.Write(blogResp)
 }
 
-func deleteBlog(w http.ResponseWriter, r *http.Request) {
+func (app *application) deleteBlog(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("delete blog"))
 }
 
-func putBlog(w http.ResponseWriter, r *http.Request) {
+func (app *application) putBlog(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("put blog"))
 }
 
-func patchBlog(w http.ResponseWriter, r *http.Request) {
+func (app *application) patchBlog(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("patch blog"))
 }
 
-func blogComments(w http.ResponseWriter, r *http.Request) {
+func (app *application) blogComments(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf("blog comments %s", id)))
 }
 
-func BlogRouter() http.Handler {
+func (app *application) BlogRouter() *http.ServeMux {
 	blogRouter := http.NewServeMux()
 
-	blogRouter.Handle("POST /", http.HandlerFunc(postBlog))
-	blogRouter.Handle("GET /", http.HandlerFunc(getBlog))
-	blogRouter.Handle("GET /{id}/comments", http.HandlerFunc(blogComments))
-	blogRouter.Handle("GET /{id}", http.HandlerFunc(getBlogById))
-	blogRouter.Handle("DELETE /{id}", http.HandlerFunc(deleteBlog))
-	blogRouter.Handle("PUT /{id}", http.HandlerFunc(putBlog))
-	blogRouter.Handle("PATCH /{id}", http.HandlerFunc(patchBlog))
+	blogRouter.HandleFunc("POST /", app.postBlog)
+	blogRouter.HandleFunc("GET /", app.getBlog)
+	blogRouter.HandleFunc("GET /{id}/comments", app.blogComments)
+	blogRouter.HandleFunc("GET /{id}", app.getBlogById)
+	blogRouter.HandleFunc("DELETE /{id}", app.deleteBlog)
+	blogRouter.HandleFunc("PUT /{id}", app.putBlog)
+	blogRouter.HandleFunc("PATCH /{id}", app.patchBlog)
 
-	return http.StripPrefix("/v1/blog", blogRouter)
+	// Catch-all route for undefined paths
+	blogRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "404 page not found", http.StatusNotFound)
+	})
+
+	return blogRouter
 }

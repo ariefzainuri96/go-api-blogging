@@ -6,10 +6,12 @@ import (
 	"time"
 
 	middleware "github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
+	"github.com/ariefzainuri96/go-api-blogging/internal/store"
 )
 
 type application struct {
 	config config
+	store  store.Storage
 }
 
 type config struct {
@@ -19,7 +21,7 @@ type config struct {
 func (app *application) mount() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.Handle("/v1/blog/", BlogRouter())
+	mux.Handle("/v1/blog/", http.StripPrefix("/v1/blog", app.BlogRouter()))
 
 	mux.Handle("/v1/auth/", AuthRouter())
 
