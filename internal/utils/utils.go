@@ -46,6 +46,7 @@ func LoadJsonData[T any](filePath string, data *T) error {
 	defer file.Close()
 
 	jsonParser := json.NewDecoder(file)
+
 	if err := jsonParser.Decode(data); err != nil {
 		return fmt.Errorf("error parsing JSON: %w", err)
 	}

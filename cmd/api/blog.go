@@ -1,8 +1,9 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -10,15 +11,60 @@ import (
 )
 
 func (app *application) postBlog(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("post blog"))
+	baseResp := response.BaseResponse{}
 
-	app.store.Blogs.Create(context.Background())
+	var data response.Blog
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = "Invalid request"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	err = app.store.Blogs.Create(r.Context(), data)
+
+	if err != nil {
+		baseResp.Status = http.StatusInternalServerError
+		baseResp.Message = "Internal server error"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusInternalServerError)
+		return
+	}
+
+	baseResp.Status = http.StatusOK
+	baseResp.Message = "Success"
+	resp, _ := baseResp.MarshalBaseResponse()
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
 }
 
 func (app *application) getBlog(w http.ResponseWriter, r *http.Request) {
+	blogs, err := app.store.Blogs.GetAll(r.Context())
+
+	baseResp := response.BaseResponse{}
+
+	if err != nil {
+		log.Println(err.Error())
+		baseResp.Status = http.StatusInternalServerError
+		baseResp.Message = "internal server error"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusInternalServerError)
+		return
+	}
+
+	baseResp.Status = http.StatusOK
+	baseResp.Message = "Success"
+	blogResp, _ := response.BlogsResponse{
+		BaseResponse: baseResp,
+		Blogs:        blogs,
+	}.MarshalBlogsResponse()
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("get blog"))
+	w.Write(blogResp)
 }
 
 func (app *application) getBlogById(w http.ResponseWriter, r *http.Request) {
