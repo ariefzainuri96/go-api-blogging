@@ -11,6 +11,7 @@ type Storage struct {
 	Blogs interface {
 		Create(context.Context, response.Blog) error
 		GetAll(context.Context) ([]response.Blog, error)
+		CreateWithDB(context.Context, *response.Blog) error
 	}
 	Auths interface {
 		Login(context.Context) error

@@ -14,6 +14,30 @@ type BlogsStore struct {
 	db *sql.DB
 }
 
+func (s *BlogsStore) CreateWithDB(ctx context.Context, body *response.Blog) error {
+	// query := `CREATE TABLE IF NOT EXISTS blogs (
+	// 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	// 	title TEXT NOT NULL,
+	// 	body TEXT NOT NULL,
+	// 	created_at TEXT NOT NULL,
+	// );`
+
+	query := `
+		INSERT INTO blogs (title, body, created_at)
+		VALUES ($1, $2, $3) RETURNING id, created_at;
+	`
+
+	err := s.db.
+		QueryRowContext(ctx, query, body.Title, body.Body, body.CreatedAt).
+		Scan(&body.ID, &body.CreatedAt)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *BlogsStore) Create(ctx context.Context, body response.Blog) error {
 	dir, err := os.Getwd() // Gets the working directory
 	if err != nil {

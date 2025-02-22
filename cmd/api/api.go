@@ -15,7 +15,15 @@ type application struct {
 }
 
 type config struct {
+	db   dbConfig
 	addr string
+}
+
+type dbConfig struct {
+	addr         string
+	maxOpenCons  int
+	maxIdleConns int
+	maxIdleTime  string
 }
 
 func (app *application) mount() *http.ServeMux {
