@@ -24,9 +24,10 @@ func (app *application) postBlog(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	err = app.store.Blogs.Create(r.Context(), data)
+	err = app.store.Blogs.CreateWithDB(r.Context(), &data)
 
 	if err != nil {
+		log.Println(err.Error())
 		baseResp.Status = http.StatusInternalServerError
 		baseResp.Message = "Internal server error"
 		resp, _ := baseResp.MarshalBaseResponse()
@@ -36,7 +37,10 @@ func (app *application) postBlog(w http.ResponseWriter, r *http.Request) {
 
 	baseResp.Status = http.StatusOK
 	baseResp.Message = "Success"
-	resp, _ := baseResp.MarshalBaseResponse()
+	resp, _ := response.BlogResponse{
+		BaseResponse: baseResp,
+		Blog:         data,
+	}.MarshalBlogResponse()
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
@@ -85,9 +89,9 @@ func (app *application) getBlogById(w http.ResponseWriter, r *http.Request) {
 	blogResp, _ := response.BlogResponse{
 		BaseResponse: baseResp,
 		Blog: response.Blog{
-			ID:    int64(id),
-			Title: "test",
-			Body:  "test",
+			ID:          int64(id),
+			Title:       "test",
+			Description: "test",
 		},
 	}.MarshalBlogResponse()
 	w.WriteHeader(http.StatusOK)

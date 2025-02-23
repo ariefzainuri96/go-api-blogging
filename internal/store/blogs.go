@@ -23,12 +23,12 @@ func (s *BlogsStore) CreateWithDB(ctx context.Context, body *response.Blog) erro
 	// );`
 
 	query := `
-		INSERT INTO blogs (title, body, created_at)
-		VALUES ($1, $2, $3) RETURNING id, created_at;
+		INSERT INTO blogs (title, description)
+		VALUES ($1, $2) RETURNING id, created_at;
 	`
 
 	err := s.db.
-		QueryRowContext(ctx, query, body.Title, body.Body, body.CreatedAt).
+		QueryRowContext(ctx, query, body.Title, body.Description).
 		Scan(&body.ID, &body.CreatedAt)
 
 	if err != nil {

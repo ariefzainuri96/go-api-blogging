@@ -41,8 +41,8 @@ func (r *BlogResponse) UnmarshalBlogResponse(data []byte) error {
 }
 
 type Blog struct {
-	ID        int64  `json:"id"`
-	Title     string `json:"title"`
-	Body      string `json:"body"`
-	CreatedAt string `json:"created_at"`
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"created_at"`
 }
