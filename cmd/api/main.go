@@ -18,6 +18,8 @@ func main() {
 		return
 	}
 
+	log.Println(os.Getenv("DB_ADDR"))
+
 	db, err := db.New(os.Getenv("DB_ADDR"), 30, 30, "10m")
 
 	if err != nil {
