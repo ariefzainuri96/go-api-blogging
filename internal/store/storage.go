@@ -9,9 +9,10 @@ import (
 
 type Storage struct {
 	Blogs interface {
-		Create(context.Context, response.Blog) error
 		GetAll(context.Context) ([]response.Blog, error)
 		CreateWithDB(context.Context, *response.Blog) error
+		GetById(context.Context, int64) (response.Blog, error)
+		DeleteById(context.Context, int64) error
 	}
 	Auths interface {
 		Login(context.Context) error

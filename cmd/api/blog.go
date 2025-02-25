@@ -84,23 +84,58 @@ func (app *application) getBlogById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	blog, err := app.store.Blogs.GetById(r.Context(), int64(id))
+
+	if err != nil {
+		log.Println(err.Error())
+		baseResp.Status = http.StatusInternalServerError
+		baseResp.Message = "internal server error"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusInternalServerError)
+		return
+	}
+
 	baseResp.Status = http.StatusOK
 	baseResp.Message = "Success"
+
 	blogResp, _ := response.BlogResponse{
 		BaseResponse: baseResp,
-		Blog: response.Blog{
-			ID:          int64(id),
-			Title:       "test",
-			Description: "test",
-		},
+		Blog:         blog,
 	}.MarshalBlogResponse()
 	w.WriteHeader(http.StatusOK)
 	w.Write(blogResp)
 }
 
 func (app *application) deleteBlog(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+
+	baseResp := response.BaseResponse{}
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = "invalid id"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
+	err = app.store.Blogs.DeleteById(r.Context(), int64(id))
+
+	if err != nil {
+		log.Println(err.Error())
+		baseResp.Status = http.StatusInternalServerError
+		baseResp.Message = "internal server error"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusInternalServerError)
+		return
+	}
+
+	baseResp.Status = http.StatusOK
+	baseResp.Message = "Success delete blog"
+
+	baseRespJson, _ := baseResp.MarshalBaseResponse()
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("delete blog"))
+	w.Write(baseRespJson)
 }
 
 func (app *application) putBlog(w http.ResponseWriter, r *http.Request) {

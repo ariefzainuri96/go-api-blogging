@@ -3,11 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
-	"os"
-	"path/filepath"
 
 	response "github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
-	utils "github.com/ariefzainuri96/go-api-blogging/internal/utils"
 )
 
 type BlogsStore struct {
@@ -38,45 +35,67 @@ func (s *BlogsStore) CreateWithDB(ctx context.Context, body *response.Blog) erro
 	return nil
 }
 
-func (s *BlogsStore) Create(ctx context.Context, body response.Blog) error {
-	dir, err := os.Getwd() // Gets the working directory
+func (s *BlogsStore) GetById(ctx context.Context, id int64) (response.Blog, error) {
+	var blog response.Blog
+
+	query := `
+		SELECT id, title, description, created_at
+		FROM blogs
+		WHERE id = $1;
+	`
+
+	err := s.db.
+		QueryRowContext(ctx, query, id).
+		Scan(&blog.ID, &blog.Title, &blog.Description, &blog.CreatedAt)
+
 	if err != nil {
-		return err
+		return blog, err
 	}
 
-	path := filepath.Join(dir, "/internal/db/blogs.json")
-
-	var blogs []response.Blog
-	err = utils.LoadJsonData(path, &blogs)
-
-	if err != nil {
-		return err
-	}
-
-	blogs = append(blogs, body)
-
-	if err := utils.SaveToJson(path, blogs); err != nil {
-		return err
-	}
-
-	return nil
+	return blog, nil
 }
 
 func (s *BlogsStore) GetAll(ctx context.Context) ([]response.Blog, error) {
 	var blogs []response.Blog
 
-	dir, err := os.Getwd() // Gets the working directory
+	query := `
+		SELECT id, title, description, created_at
+		FROM blogs;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query)
+
 	if err != nil {
 		return nil, err
 	}
 
-	path := filepath.Join(dir, "/internal/db/blogs.json")
+	defer rows.Close()
 
-	err = utils.LoadJsonData(path, &blogs)
+	for rows.Next() {
+		var blog response.Blog
+		err := rows.Scan(&blog.ID, &blog.Title, &blog.Description, &blog.CreatedAt)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		blogs = append(blogs, blog)
 	}
 
 	return blogs, nil
+}
+
+func (s *BlogsStore) DeleteById(ctx context.Context, id int64) error {
+	query := `
+		DELETE FROM blogs
+		WHERE id = $1;
+	`
+
+	_, err := s.db.ExecContext(ctx, query, id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
