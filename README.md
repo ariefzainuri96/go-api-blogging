@@ -3,7 +3,7 @@
 1. Create migration file:
    migrate create -seq -ext sql -dir ././cmd/migrate/migrations create_users
 
-2. Perform migration:
+2. Perform migration: for migration we using host address
    migrate -path ./cmd/migrate/migrations -database="postgres://postgres:Rohanwebid96dong@localhost:5433/go-crash-course?sslmode=disable" up
 
 ## Docker
